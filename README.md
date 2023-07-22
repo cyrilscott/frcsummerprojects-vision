@@ -6,3 +6,4 @@ Dependencies:
 
 - OpenCV `pip install opencv-python`
 - Flask `pip install flask`
+- dt-apriltags `pip install dt-apriltags`. This is only avaiable on Linux. Use WSL If on Windows.
