@@ -1,14 +1,14 @@
 from threading import Thread
 import cv2
 
-index = 0
-for i in range(-1, 50):
-    cap = cv2.VideoCapture(i)
-    if cap.isOpened():
-        index = i
-    cap.release()
-print(index)
-cap = cv2.VideoCapture(index)
+# index = 0
+# for i in range(-1, 50):
+#     cap = cv2.VideoCapture(i)
+#     if cap.isOpened():
+#         index = i
+#     cap.release()
+# print(index)
+cap = cv2.VideoCapture(0)
 
 
 class WorbotsVision:
