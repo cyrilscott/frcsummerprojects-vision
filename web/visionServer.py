@@ -21,7 +21,15 @@ class VisionServer:
 def openMain():
     while True:
         frame = WorbotsVision.getFrame()
+        frameCopy = WorbotsVision.getFrame()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        ret, buffer = cv2.imencode('.jpg', cv2.flip(gray, 1))
+
+        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_16h5)
+        detectorParams = cv2.aruco.DetectorParameters()
+        (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
+
+        cv2.aruco.drawDetectedMarkers(image=frameCopy, corners=corners, ids=ids)
+
+        ret, buffer = cv2.imencode('.jpg', cv2.flip(frameCopy, 1))
         frame = buffer.tobytes()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
