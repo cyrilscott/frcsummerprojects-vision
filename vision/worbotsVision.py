@@ -6,33 +6,13 @@ import time
 class WorbotsVision:
     mtx = None
     dist = None
-    outputFrame = None
-    lock = threading.Lock()
 
     def __init__(self, cameraNumber):
         self.cap = cv2.VideoCapture(cameraNumber, cv2.CAP_ANY)
         time.sleep(2.0)
-        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        # self.cap.set(cv2.CAP_PROP_FPS, 60)
-
-    def openNewCam(self, num):
-        self.cap.release()
-        self.cap = None
-        self.cap = cv2.VideoCapture(num, cv2.CAP_ANY)
-        time.sleep(2.0)
-        while not self.cap.isOpened():
-            self.cap.grab()
-
-    def mainFunc(self):
-        while True:
-            with self.lock:
-                if self.outputFrame is None:
-                    continue
-                (flag, encodedImage) = cv2.imencode(".jpg", self.outputFrame)
-                if not flag:
-                    continue
-                yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) + b'\r\n')
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        self.cap.set(cv2.CAP_PROP_FPS, 60)
 
     def setCamResolution(self, width, height):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -47,8 +27,9 @@ class WorbotsVision:
             detectorParams = cv2.aruco.DetectorParameters()
             (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
             cv2.aruco.drawDetectedMarkers(image=frameCopy, corners=corners, ids=ids)
-            with self.lock:
-                outputFrame = frameCopy.copy()
+            cv2.imshow("out",frameCopy)
+            if (cv2.waitKey(1) & 0xFF == ord('q')):
+                break
 
     def openCharuco(self):
         while True:
@@ -70,8 +51,9 @@ class WorbotsVision:
                 imgHeight, imgWidth = imgPoints.shape[:2]
                 if (objPoints is not None and imgPoints is not None and objWidth > 8 and imgWidth > 8):
                     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objPoints, imgPoints, gray.shape[::-1], None, None)
-            with self.lock:
-                outputFrame = frameCopy.copy()
+            cv2.imshow("out",frameCopy)
+            if (cv2.waitKey(1) & 0xFF == ord('q')):
+                break
 
         def getCameraMatrix(self):
             return self.mtx

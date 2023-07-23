@@ -4,7 +4,6 @@ Vision projects for the 2023-2024 summer.
 
 Dependencies:
 - OpenCV `pip install opencv-contrib-python`
-- Flask `pip install flask`
 
 Installation:  
 - Use `pip install -r requirements.txt` to automatically install all of the dependencies above.
