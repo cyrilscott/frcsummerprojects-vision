@@ -3,7 +3,7 @@ from vision import WorbotsVision
 
 def main():
     vision = WorbotsVision(0)
-    vision.openMain()
+    vision.openCharuco()
 
 
 if __name__ == "__main__":
