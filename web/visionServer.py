@@ -61,7 +61,7 @@ def openCharuco():
             (objPoints, imgPoints) = board.matchImagePoints(charucoCorners, charucoIds)
             objHeight, objWidth = objPoints.shape[:2]
             imgHeight, imgWidth = imgPoints.shape[:2]
-            if (objPoints is not None and imgPoints is not None and objWidth > 5 and imgWidth > 5):
+            if (objPoints is not None and imgPoints is not None and objWidth > 8 and imgWidth > 8):
                 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objPoints, imgPoints, gray.shape[::-1], None, None)
 
         ret, buffer = cv2.imencode('.jpg', frameCopy)
