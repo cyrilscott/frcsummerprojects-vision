@@ -4,6 +4,7 @@ Vision projects for the 2023-2024 summer.
 
 Dependencies:
 - OpenCV `pip install opencv-contrib-python`
+- PyNetworkTables `pip install pynetworktables`
 
 Installation:  
 - Use `pip install -r requirements.txt` to automatically install all of the dependencies above.
