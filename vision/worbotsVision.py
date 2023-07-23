@@ -1,5 +1,6 @@
 import threading
 import cv2
+import numpy as np
 from imutils.video import VideoStream
 import time
 
@@ -7,12 +8,15 @@ class WorbotsVision:
     mtx = None
     dist = None
 
+    allCharucoCorners = np.array([])
+    allCharucoIds = np.array([])
+
     def __init__(self, cameraNumber):
-        self.cap = cv2.VideoCapture(cameraNumber, cv2.CAP_ANY)
-        time.sleep(2.0)
+        self.cap = cv2.VideoCapture(cameraNumber)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
+        print("done init")
 
     def setCamResolution(self, width, height):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -44,13 +48,23 @@ class WorbotsVision:
             detectorParams = cv2.aruco.DetectorParameters()
             detector = cv2.aruco.CharucoDetector(board=board, charucoParams=charucoParams, detectorParams=detectorParams)
             (charucoCorners, charucoIds, markerCorns, markerIds) = detector.detectBoard(gray)
+            if (np.size(self.allCharucoCorners) ==0):
+                self.allCharucoCorners = charucoCorners
+                self.allCharucoIds = charucoIds 
+            else:
+                self.allCharucoCorners = np.append(self.allCharucoCorners, charucoCorners, axis=0)
+                self.allCharucoIds = np.append(self.allCharucoIds, charucoIds, axis=0)
             cv2.aruco.drawDetectedCornersCharuco(frameCopy, charucoCorners, charucoIds, (0, 0, 255))
-            if(charucoCorners is not None):
-                (objPoints, imgPoints) = board.matchImagePoints(charucoCorners, charucoIds)
-                objHeight, objWidth = objPoints.shape[:2]
-                imgHeight, imgWidth = imgPoints.shape[:2]
-                if (objPoints is not None and imgPoints is not None and objWidth > 8 and imgWidth > 8):
-                    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objPoints, imgPoints, gray.shape[::-1], None, None)
+            # while (self.allImagePoints):
+            #     if(charucoCorners is not None):
+            #         (objPoints, imgPoints) = board.matchImagePoints(charucoCorners, charucoIds)
+
+            # if (objPoints is not None and imgPoints is not None):
+            #     ret, self.mtx, self.dist, rvecs, tvecs = cv2.calibrateCamera([objPoints], [imgPoints], gray.shape[::-1], self.mtx, self.dist)
+            if(np.size(self.allCharucoIds) > 100):
+                ret, self.mtx, self.dist, rvecs, tvecs = cv2.aruco.calibrateCameraCharuco(self.allCharucoCorners, self.allCharucoIds, board, gray.shape[::1], self.mtx, self.dist)
+                print(self.mtx)
+
             cv2.imshow("out",frameCopy)
             if (cv2.waitKey(1) & 0xFF == ord('q')):
                 break
