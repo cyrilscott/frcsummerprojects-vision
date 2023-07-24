@@ -5,14 +5,12 @@ from network import WorbotsTables
 from config import WorbotsConfig
 
 def main():
-    vision = WorbotsVision(0)
-    vision.openCharuco()
+    config = WorbotsConfig()
 
-    # config = WorbotsConfig()
-
-    # network = WorbotsTables("127.0.0.1")
-    # network.sendNumber()
-
+    while True:
+        vision = WorbotsVision(0)
+        # vision.openCharuco()
+        vision.mainPnP()
 
 if __name__ == "__main__":
     main()
