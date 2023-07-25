@@ -6,11 +6,11 @@ from config import WorbotsConfig
 
 def main():
     config = WorbotsConfig()
+    vision = WorbotsVision(0)
+    vision.calibrateCameraImages("./images")
+    # while True:
+    #     vision.mainPnP()
+        # vision.checkCalib()
 
-    while True:
-        vision = WorbotsVision(0)
-        # vision.openCharuco()
-        vision.mainPnP()
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
