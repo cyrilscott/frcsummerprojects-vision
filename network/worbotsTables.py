@@ -6,11 +6,11 @@ class WorbotsTables:
     number = 0
     sd = None
     config = WorbotsConfig()
-    def __init__(self, teamNum):
-        if self.config.getKey('TeamNumber'):
+    def __init__(self):
+        if self.config.SIM_MODE:
             NetworkTables.initialize(server="127.0.0.1")
         else:
-            NetworkTables.startClientTeam(teamNum)
+            NetworkTables.startClientTeam(self.config.TEAM_NUMBER)
             NetworkTables.initialize()
         NetworkTables.setNetworkIdentity("WorbotsVision")
         self.sd = NetworkTables.getTable("SmartDashboard")

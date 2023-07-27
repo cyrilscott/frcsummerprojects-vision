@@ -10,12 +10,12 @@ class WorbotsVision:
     rvecs = None
     tvecs = None
 
-    def __init__(self, cameraNumber):
-        # self.cap = cv2.VideoCapture(cameraNumber)
-        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        # self.cap.set(cv2.CAP_PROP_FPS, 60)
+    def __init__(self):
         self.worConfig = WorbotsConfig()
+        self.cap = cv2.VideoCapture(self.worConfig.CAMERA_ID)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.worConfig.RES_W)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.worConfig.RES_H)
+        self.cap.set(cv2.CAP_PROP_FPS, self.worConfig.CAM_FPS)
         print("done init")
 
     def setCamResolution(self, width, height):
@@ -62,8 +62,6 @@ class WorbotsVision:
 
         if len(allCharucoCorners) > 0:
             # Combine allCharucoCorners and allCharucoIds into single arrays
-            allCharucoCorners = np.concatenate(allCharucoCorners)
-            allCharucoIds = np.concatenate(allCharucoIds)
 
             ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.aruco.calibrateCameraCharuco(
                 allCharucoCorners, allCharucoIds, board, gray.shape[::-1], None, None
@@ -78,7 +76,7 @@ class WorbotsVision:
     def mainPnP(self):
         mtx, dist, rvecs, tvecs = self.worConfig.getCameraIntrinsicsFromJSON()
         axis_len = 0.1
-        tag_size = 0.1524
+        tag_size = self.worConfig.TAG_SIZE_METERS
         while True:
             ret, frame = self.cap.read()
             frameCopy = frame.copy()
@@ -89,18 +87,16 @@ class WorbotsVision:
             (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
 
             if ids is not None and len(ids) > 0:
-                # obj_1 = [-tag_size/2, tag_size/2, 0.0]
-                # obj_2 = [tag_size/2, tag_size/2, 0.0]
-                # obj_3 = [tag_size/2, -tag_size/2, 0.0]
-                # obj_4 = [-tag_size/2, -tag_size/2, 0.0]
-                # obj_all = obj_1 + obj_2 + obj_3 + obj_4
-                # objPoints = np.array(obj_all).reshape(4,3)
+                obj_1 = [-tag_size/2, tag_size/2, 0.0]
+                obj_2 = [tag_size/2, tag_size/2, 0.0]
+                obj_3 = [tag_size/2, -tag_size/2, 0.0]
+                obj_4 = [-tag_size/2, -tag_size/2, 0.0]
+                obj_all = obj_1 + obj_2 + obj_3 + obj_4
+                objPoints = np.array(obj_all).reshape(4,3)
                 for i in range(len(ids)):
-                    rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], tag_size, mtx, dist)
-
-                    # ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], mtx, dist)
-
-                    # img_points, _ = cv2.projectPoints(objPoints, rvecs, tvecs, mtx, dist)
+                    ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], mtx, dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                    print(tvec)
+                    print(rvec)
 
                     frameCopy = cv2.drawFrameAxes(frameCopy, mtx, dist, rvec, tvec, axis_len)
                 cv2.aruco.drawDetectedMarkers(frameCopy, corners, ids, (0, 0, 255))
