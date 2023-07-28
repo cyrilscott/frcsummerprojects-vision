@@ -79,7 +79,6 @@ class WorbotsVision:
         tag_size = self.worConfig.TAG_SIZE_METERS
         while True:
             ret, frame = self.cap.read()
-            frameCopy = frame.copy()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_16h5)
@@ -93,15 +92,15 @@ class WorbotsVision:
                 obj_4 = [-tag_size/2, -tag_size/2, 0.0]
                 obj_all = obj_1 + obj_2 + obj_3 + obj_4
                 objPoints = np.array(obj_all).reshape(4,3)
+
                 for i in range(len(ids)):
                     ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], mtx, dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
-                    print(tvec)
-                    print(rvec)
+                    print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
 
-                    frameCopy = cv2.drawFrameAxes(frameCopy, mtx, dist, rvec, tvec, axis_len)
-                cv2.aruco.drawDetectedMarkers(frameCopy, corners, ids, (0, 0, 255))
+                    frame = cv2.drawFrameAxes(frame, mtx, dist, rvec, tvec, axis_len)
+                cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
 
-            cv2.imshow("out", frameCopy)
+            cv2.imshow("out", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break

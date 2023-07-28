@@ -1,22 +1,23 @@
 import time
-from networktables import NetworkTables
+import ntcore
 from config import WorbotsConfig
 
 class WorbotsTables:
-    number = 0
-    sd = None
     config = WorbotsConfig()
+    ntInstance = None
+
     def __init__(self):
+        self.ntInstance = ntcore.NetworkTableInstance.getDefault()
         if self.config.SIM_MODE:
-            NetworkTables.initialize(server="127.0.0.1")
+            self.ntInstance.setServer("127.0.0.1")
+            self.ntInstance.startClient4(f"VisionModule{self.config.MODULE_ID}")
         else:
-            NetworkTables.startClientTeam(self.config.TEAM_NUMBER)
-            NetworkTables.initialize()
-        NetworkTables.setNetworkIdentity("WorbotsVision")
-        self.sd = NetworkTables.getTable("SmartDashboard")
+            self.ntInstance.setServerTeam(self.config.TEAM_NUMBER)
+            self.ntInstance.startClient4(f"VisionModule{self.config.MODULE_ID}")
+
+        topic = self.ntInstance.getTable(f"/module{self.config.MODULE_ID}/output")
+        yeye = topic.putNumber("yeye", 0.1)
     
-    def sendNumber(self):
-        while True:
-            self.sd.putNumber("pyTest", self.number)
-            self.number += 1
-            time.sleep(1.0)
+    
+    def sendRobotPose(self):
+        print(self.number)

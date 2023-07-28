@@ -5,21 +5,21 @@ class WorbotsConfig:
     CONFIG_FILENAME = "config.json"
     CALIBRATION_FILENAME = "calibration.json"
 
-    CAMERA_ID = None
-    TEAM_NUMBER = None
+    CAMERA_ID = 0
+    TEAM_NUMBER = 4145
     MODULE_ID = None
     SIM_MODE = False
-    RES_W = None
-    RES_H = None
-    CAM_FPS = None
-    TAG_SIZE_METERS = None
+    RES_W = 1280
+    RES_H = 720
+    CAM_FPS = 60
+    TAG_SIZE_METERS = 0.1524
 
     def __new__(cls):
         with open(cls.CONFIG_FILENAME, "r") as read_file:
             data = json.load(read_file)
             cls.CAMERA_ID = data["CameraId"]
             cls.TEAM_NUMBER = data["TeamNumber"]
-            cls.MODULE_ID = data["ModuleId"]
+            cls.MODULE_ID = int(data["ModuleId"])
             cls.SIM_MODE = data["SimMode"]
             cls.RES_W = data["ResolutionW"]
             cls.RES_H = data["ResolutionH"]
