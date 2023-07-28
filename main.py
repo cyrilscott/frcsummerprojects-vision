@@ -1,5 +1,6 @@
 import threading
 import json
+import cv2
 from vision import WorbotsVision
 from network import WorbotsTables
 from config import WorbotsConfig
@@ -11,9 +12,15 @@ def main():
     # vision.calibrateCameraImages("./images")
 
     while True:
-        frame, tvec, rvec = vision.mainPnP()
+        # frame, tvec, rvec = vision.mainPnPSingleFrame()
+        # vision.mainPnP()
 
-        # vision.checkCalib()
+        frame, returnArray = vision.mainPnPSingleFrame()
+        network.sendVisionMeasurement(returnArray)
+        cv2.imshow("out", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from config import WorbotsConfig
+from .worbotsDetection import Detection
 import os
 
 class WorbotsVision:
@@ -73,6 +74,7 @@ class WorbotsVision:
     
     def mainPnP(self):
         while True:
+            returnArray = np.array([], dtype=Detection)
             ret, frame = self.cap.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -92,29 +94,19 @@ class WorbotsVision:
 
                 for i in range(len(ids)):
                     ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
-                    print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
-
-                    imgpts, jac = cv2.projectPoints(axis, rvec, tvec, self.mtx, self.dist)
-
-                    # draw cube:
-                    # newImgPts = np.int32(imgPts).reshape(-1, 2)
-                    # print(newImgPts.shape)
-                    # frame = cv2.drawContours(frame, [newImgPts[:4]],-1,(0,255,0),-3)
-                    # for i,j in zip(range(4), range(4,8)):
-                    #     print(str(i) + " " + str(j))
-                    #     frame = cv2.line(frame, tuple(newImgPts[i]), tuple(newImgPts[j]), (255), 3)
-                    # frame = cv2.drawContours(frame, [newImgPts[4:]],-1,(0,0,255),3)
-
+                    # print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
+                    detection = Detection(ids[i], tvec, rvec)
+                    returnArray = np.append(returnArray, detection)
                     frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
                 cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
-
+            print(returnArray.size)
             cv2.imshow("out", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-    def mainPnPSingleFrame(self):
-        returnArray = []
+    def mainPnPSingleFrame(self) -> any:
+        returnArray = np.array([], Detection)
         ret, frame = self.cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_16h5)
@@ -130,19 +122,12 @@ class WorbotsVision:
             axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
             for i in range(len(ids)):
                 ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
-                print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
-                imgpts, jac = cv2.projectPoints(axis, rvec, tvec, self.mtx, self.dist)
-                # draw cube:
-                # newImgPts = np.int32(imgPts).reshape(-1, 2)
-                # print(newImgPts.shape)
-                # frame = cv2.drawContours(frame, [newImgPts[:4]],-1,(0,255,0),-3)
-                # for i,j in zip(range(4), range(4,8)):
-                #     print(str(i) + " " + str(j))
-                #     frame = cv2.line(frame, tuple(newImgPts[i]), tuple(newImgPts[j]), (255), 3)
-                # frame = cv2.drawContours(frame, [newImgPts[4:]],-1,(0,0,255),3)
+                # print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
+                detection = Detection(ids[i], tvec, rvec)
+                returnArray = np.append(returnArray, detection)
                 frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
             cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
-        return frame, tvec, rvec
+        return frame, returnArray
 
     def checkCalib(self):
         mtx, dist, rvecs, tvecs = self.worConfig.getCameraIntrinsicsFromJSON()
