@@ -9,8 +9,10 @@ def main():
     network = WorbotsTables()
     vision = WorbotsVision()
     # vision.calibrateCameraImages("./images")
+
     while True:
-        vision.mainPnP()
+        frame, tvec, rvec = vision.mainPnP()
+
         # vision.checkCalib()
 
 if __name__ == '__main__':

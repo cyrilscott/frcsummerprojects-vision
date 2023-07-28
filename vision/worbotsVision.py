@@ -4,14 +4,12 @@ from config import WorbotsConfig
 import os
 
 class WorbotsVision:
-    worConfig = None
-    mtx = None
-    dist = None
-    rvecs = None
-    tvecs = None
+    worConfig = WorbotsConfig()
+    mtx, dist, rvecs, tvecs = worConfig.getCameraIntrinsicsFromJSON()
+    axis_len = 0.1
+    tag_size = worConfig.TAG_SIZE_METERS
 
     def __init__(self):
-        self.worConfig = WorbotsConfig()
         self.cap = cv2.VideoCapture(self.worConfig.CAMERA_ID)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.worConfig.RES_W)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.worConfig.RES_H)
@@ -74,9 +72,6 @@ class WorbotsVision:
         
     
     def mainPnP(self):
-        mtx, dist, rvecs, tvecs = self.worConfig.getCameraIntrinsicsFromJSON()
-        axis_len = 0.1
-        tag_size = self.worConfig.TAG_SIZE_METERS
         while True:
             ret, frame = self.cap.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -86,18 +81,31 @@ class WorbotsVision:
             (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
 
             if ids is not None and len(ids) > 0:
-                obj_1 = [-tag_size/2, tag_size/2, 0.0]
-                obj_2 = [tag_size/2, tag_size/2, 0.0]
-                obj_3 = [tag_size/2, -tag_size/2, 0.0]
-                obj_4 = [-tag_size/2, -tag_size/2, 0.0]
+                obj_1 = [-self.tag_size/2, self.tag_size/2, 0.0]
+                obj_2 = [self.tag_size/2, self.tag_size/2, 0.0]
+                obj_3 = [self.tag_size/2, -self.tag_size/2, 0.0]
+                obj_4 = [-self.tag_size/2, -self.tag_size/2, 0.0]
                 obj_all = obj_1 + obj_2 + obj_3 + obj_4
                 objPoints = np.array(obj_all).reshape(4,3)
 
+                axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
+
                 for i in range(len(ids)):
-                    ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], mtx, dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                    ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
                     print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
 
-                    frame = cv2.drawFrameAxes(frame, mtx, dist, rvec, tvec, axis_len)
+                    imgpts, jac = cv2.projectPoints(axis, rvec, tvec, self.mtx, self.dist)
+
+                    # draw cube:
+                    # newImgPts = np.int32(imgPts).reshape(-1, 2)
+                    # print(newImgPts.shape)
+                    # frame = cv2.drawContours(frame, [newImgPts[:4]],-1,(0,255,0),-3)
+                    # for i,j in zip(range(4), range(4,8)):
+                    #     print(str(i) + " " + str(j))
+                    #     frame = cv2.line(frame, tuple(newImgPts[i]), tuple(newImgPts[j]), (255), 3)
+                    # frame = cv2.drawContours(frame, [newImgPts[4:]],-1,(0,0,255),3)
+
+                    frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
                 cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
 
             cv2.imshow("out", frame)
@@ -105,9 +113,36 @@ class WorbotsVision:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-
-    def getCalibration(self) -> any:
-        return (self.mtx, self.dist, self.rvecs, self.tvecs)
+    def mainPnPSingleFrame(self):
+        returnArray = []
+        ret, frame = self.cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_16h5)
+        detectorParams = cv2.aruco.DetectorParameters()
+        (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
+        if ids is not None and len(ids) > 0:
+            obj_1 = [-self.tag_size/2, self.tag_size/2, 0.0]
+            obj_2 = [self.tag_size/2, self.tag_size/2, 0.0]
+            obj_3 = [self.tag_size/2, -self.tag_size/2, 0.0]
+            obj_4 = [-self.tag_size/2, -self.tag_size/2, 0.0]
+            obj_all = obj_1 + obj_2 + obj_3 + obj_4
+            objPoints = np.array(obj_all).reshape(4,3)
+            axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
+            for i in range(len(ids)):
+                ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
+                imgpts, jac = cv2.projectPoints(axis, rvec, tvec, self.mtx, self.dist)
+                # draw cube:
+                # newImgPts = np.int32(imgPts).reshape(-1, 2)
+                # print(newImgPts.shape)
+                # frame = cv2.drawContours(frame, [newImgPts[:4]],-1,(0,255,0),-3)
+                # for i,j in zip(range(4), range(4,8)):
+                #     print(str(i) + " " + str(j))
+                #     frame = cv2.line(frame, tuple(newImgPts[i]), tuple(newImgPts[j]), (255), 3)
+                # frame = cv2.drawContours(frame, [newImgPts[4:]],-1,(0,0,255),3)
+                frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
+            cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
+        return frame, tvec, rvec
 
     def checkCalib(self):
         mtx, dist, rvecs, tvecs = self.worConfig.getCameraIntrinsicsFromJSON()

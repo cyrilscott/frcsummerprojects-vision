@@ -17,6 +17,14 @@ class WorbotsTables:
 
         topic = self.ntInstance.getTable(f"/module{self.config.MODULE_ID}/output")
         yeye = topic.putNumber("yeye", 0.1)
+
+    def sendVisionMeasurement(self, ids, returnArray):
+        topics = []
+        for i in range(ids.size):
+            topic[i] = self.ntInstance.getTable(f"/module{self.config.MODULE_ID}/output/{i}")
+        
+        for id in ids:
+            print(id)
     
     
     def sendRobotPose(self):
