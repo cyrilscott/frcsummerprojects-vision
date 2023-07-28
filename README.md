@@ -12,4 +12,4 @@ Installation:
 
 Description:  
 This code uses OpenCV's built in ArUco library for detecting AprilTags. This was chosen over other libraries due to its flexibility and customization abilities.  
-The board.jpg is the ChArUco board that is used to calibrate the camera. The Checker width is 24mm, and the Marker width is 19mm. This is crucial to the calibration of the camera. It is also crucial to keep it flat while calibrating. RobotPy/PyNtCore are used for NetworkTables 4.0, as well as bringing WPI types to our code.
+The board.jpg is the ChArUco board that is used to calibrate the camera. The Checker width is 24mm, and the Marker width is 19mm. This is crucial to the calibration of the camera. It is also crucial to keep it flat while calibrating. RobotPy/PyNtCore are used for NetworkTables 4.0, as well as bringing WPI types to our code. Here is a link to the current field layout as a .json file: https://github.com/wpilibsuite/allwpilib/blob/main/apriltag/src/main/native/resources/edu/wpi/first/apriltag/2023-chargedup.json

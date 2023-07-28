@@ -1,6 +1,7 @@
 import threading
 import json
 import cv2
+from wpimath.geometry import *
 from vision import WorbotsVision
 from network import WorbotsTables
 from config import WorbotsConfig
