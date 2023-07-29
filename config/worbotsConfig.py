@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from worbotsDetection import Detection, PoseDetection
 
 class WorbotsConfig:
     CONFIG_FILENAME = "config.json"

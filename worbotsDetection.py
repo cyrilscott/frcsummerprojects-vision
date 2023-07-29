@@ -19,7 +19,7 @@ class PoseDetection:
 
     def __init__(self, pose1:Pose3d, err1, pose2:Pose3d, err2, tag_ids):
         self.pose1 = pose1
-        self.er1 = err1
+        self.err1 = err1
         self.pose2 = pose2
         self.err2 = err2
         self.tag_ids = tag_ids

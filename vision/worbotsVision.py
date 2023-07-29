@@ -4,7 +4,7 @@ import numpy as np
 import math
 from config import WorbotsConfig
 from wpimath.geometry import *
-from .worbotsDetection import Detection
+from worbotsDetection import Detection, PoseDetection
 from .worbotsPoseCalculator import PoseCalculator, Pose3d
 from network import WorbotsTables
 import os
@@ -159,15 +159,27 @@ class WorbotsVision:
             if len(ids)==1:
                 _, rvec, tvec, errors = cv2.solvePnPGeneric(self.objPoints, np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
                 field_to_tag_pose = self.poseCalc.getPose3dFromTagID(ids[0])
-                camera_to_tag_pose = self.poseCalc.openCvtoWpi(tvec[0], rvec[0]).transformBy(Transform3d(Translation3d(), Rotation3d(0, math.pi, math.pi)))
-                camera_to_tag = Transform3d(camera_to_tag_pose.translation(), camera_to_tag_pose.rotation())
-                field_to_camera = field_to_tag_pose.transformBy(camera_to_tag.inverse())
-                field_to_camera_pose = Pose3d(field_to_camera.translation(), field_to_camera.rotation())
-                print(field_to_camera_pose)
-                self.worNetwork.sendRobotPose(field_to_camera_pose)
+                camera_to_tag_pose_0 = self.poseCalc.openCvtoWpi(tvec[0], rvec[0]).transformBy(Transform3d(Translation3d(), Rotation3d(0, math.pi, math.pi)))
+                camera_to_tag_pose_1 = self.poseCalc.openCvtoWpi(tvec[1], rvec[1]).transformBy(Transform3d(Translation3d(), Rotation3d(0, math.pi, math.pi)))
+                camera_to_tag_0 = Transform3d(camera_to_tag_pose_0.translation(), camera_to_tag_pose_0.rotation())
+                camera_to_tag_1 = Transform3d(camera_to_tag_pose_1.translation(), camera_to_tag_pose_1.rotation())
+                field_to_camera_0 = field_to_tag_pose.transformBy(camera_to_tag_0.inverse())
+                field_to_camera_1 = field_to_tag_pose.transformBy(camera_to_tag_1.inverse())
+                field_to_camera_pose_0 = Pose3d(field_to_camera_0.translation(), field_to_camera_0.rotation())
+                field_to_camera_pose_1 = Pose3d(field_to_camera_1.translation(), field_to_camera_1.rotation())
+                print(field_to_camera_pose_0)
+                print(field_to_camera_pose_1)
+                return gray, PoseDetection(field_to_camera_pose_0, errors[0][0], field_to_camera_pose_1, errors[1][0], ids[0])
             if len(ids)>1:
                 _, rvec, tvec, errors = cv2.solvePnPGeneric(np.array(objPoints), np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_SQPNP)
-                print(tvec)
+                camera_to_field_pose = self.poseCalc.openCvtoWpi(tvec[0], rvec[0])
+                camera_to_field = Transform3d(camera_to_field_pose.translation(), camera_to_field_pose.rotation())
+                field_to_camera = camera_to_field.inverse()
+                field_to_camera_pose = Pose3d(field_to_camera.translation(), field_to_camera.rotation()).transformBy(Transform3d(Translation3d(), Rotation3d(math.pi/2.0, 0, 0)))
+                print(field_to_camera_pose)
+                return gray, PoseDetection(field_to_camera_pose, errors[0][0], None, None, ids)
+        else:
+            return gray, None
 
 
     def checkCalib(self):

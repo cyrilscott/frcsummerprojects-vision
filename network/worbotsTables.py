@@ -2,13 +2,15 @@ import time
 import ntcore
 import numpy as np
 from config import WorbotsConfig
+from worbotsDetection import Detection, PoseDetection
 from wpimath.geometry import *
 
 class WorbotsTables:
     config = WorbotsConfig()
     ntInstance = None
     dataPublisher = None
-    posePublisher = None
+    pose0Publisher = None
+    pose1Publisher = None
 
     def __init__(self):
         self.ntInstance = ntcore.NetworkTableInstance.getDefault()
@@ -20,20 +22,27 @@ class WorbotsTables:
             self.ntInstance.startClient4(f"VisionModule{self.config.MODULE_ID}")
         table = self.ntInstance.getTable(f"/module{self.config.MODULE_ID}/output")
         self.dataPublisher = table.getDoubleArrayTopic("data").publish(ntcore.PubSubOptions())
-        self.posePublisher = table.getDoubleArrayTopic("pose").publish(ntcore.PubSubOptions())
+        self.pose0Publisher = table.getDoubleArrayTopic("pose0").publish(ntcore.PubSubOptions())
+        self.pose1Publisher = table.getDoubleArrayTopic("pose1").publish(ntcore.PubSubOptions())
 
-    # def sendVisionMeasurement(self, detectionArray: np.array([], Detection)):
-    #     outArray = []
-    #     if detectionArray.size != 0:
-    #         for i in range(detectionArray.size):
-    #             outArray.append(detectionArray[i].tag_id)
-    #             for num in detectionArray[i].tvec:
-    #                 outArray.append(num)
-    #             for num in detectionArray[i].rvec:
-    #                 outArray.append(num)
-    #     self.dataPublisher.set(outArray)
+    def sendPoseDetection(self, poseDetection: PoseDetection):
+        if poseDetection is None:
+            self.pose0Publisher.set([])
+            self.pose1Publisher.set([])
+        else:
+            if poseDetection.pose1 is not None:
+                self.pose0Publisher.set(self.getArrayFromPose3d(poseDetection.pose1))
+            else:
+                self.pose0Publisher.set([])
+            if poseDetection.pose2 is not None:
+                self.pose1Publisher.set(self.getArrayFromPose3d(poseDetection.pose2))
+            else:
+                self.pose1Publisher.set([])
     
-    def sendRobotPose(self, pose: Pose3d):
+    def sendPose3d(self, pose: Pose3d):
+        self.dataPublisher.set(self.getArrayFromPose3d(pose))
+
+    def getArrayFromPose3d(self, pose: Pose3d) -> any:
         outArray = []
         outArray.append(pose.X())
         outArray.append(pose.Y())
@@ -42,4 +51,4 @@ class WorbotsTables:
         outArray.append(pose.rotation().getQuaternion().X())
         outArray.append(pose.rotation().getQuaternion().Y())
         outArray.append(pose.rotation().getQuaternion().Z())
-        self.posePublisher.set(outArray)
+        return outArray

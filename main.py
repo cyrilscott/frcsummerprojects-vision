@@ -17,12 +17,13 @@ def main():
         # frame, tvec, rvec = vision.mainPnPSingleFrame()
         # vision.mainPnP()
 
-        vision.processFrame()
+        frame, poseDetection = vision.processFrame()
+        network.sendPoseDetection(poseDetection)
         
-        # cv2.imshow("out", frame)
+        cv2.imshow("out", frame)
 
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 if __name__ == '__main__':
     main()
