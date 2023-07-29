@@ -17,16 +17,12 @@ def main():
         # frame, tvec, rvec = vision.mainPnPSingleFrame()
         # vision.mainPnP()
 
-        frame, returnArray = vision.mainPnPSingleFrame()
-        network.sendVisionMeasurement(returnArray)
-        if returnArray.size != 0:
-            pose = calc.getPosefromTag(returnArray[0].tag_id, returnArray[0].tvec, returnArray[0].rvec)
-            network.sendRobotPose(pose)
+        vision.processFrame()
         
-        cv2.imshow("out", frame)
+        # cv2.imshow("out", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
 if __name__ == '__main__':
     main()

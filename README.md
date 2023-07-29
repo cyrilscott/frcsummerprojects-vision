@@ -19,3 +19,6 @@ Euler angles are the standard, pitch, roll, and yaw.
 Quaternions are fancy ways to describe Euler angles.  
 Rotation matricies are 3d ways to represent rotation.  
 ALL ARE INTERCHANGABLE. A great website is [here](https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html).
+
+SolvPnP vs SolvePnPGeneric:  
+SolvePnp is for a single tag, it only returns one result no matter what. SolvePnPGeneric returns 1 set of rvec, and tvec if multiple tags are detected. With multiple tags the pose is not ambiguous. With one tag it is. This means that there are two possible poses. Both poses are sent to the robot code, the robot code then decides which pose is better, and uses that for an estimate.

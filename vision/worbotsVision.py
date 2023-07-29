@@ -1,15 +1,28 @@
 import cv2
+from typing import List, Union
 import numpy as np
+import math
 from config import WorbotsConfig
+from wpimath.geometry import *
 from .worbotsDetection import Detection
 from .worbotsPoseCalculator import PoseCalculator, Pose3d
+from network import WorbotsTables
 import os
 
 class WorbotsVision:
     worConfig = WorbotsConfig()
+    worNetwork = WorbotsTables()
     mtx, dist, rvecs, tvecs = worConfig.getCameraIntrinsicsFromJSON()
     axis_len = 0.1
+    poseCalc = PoseCalculator()
     tag_size = worConfig.TAG_SIZE_METERS
+    obj_1 = [-tag_size/2, tag_size/2, 0.0]
+    obj_2 = [tag_size/2, tag_size/2, 0.0]
+    obj_3 = [tag_size/2, -tag_size/2, 0.0]
+    obj_4 = [-tag_size/2, -tag_size/2, 0.0]
+    obj_all = obj_1 + obj_2 + obj_3 + obj_4
+    objPoints = np.array(obj_all).reshape(4,3)
+    axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
 
     def __init__(self):
         self.cap = cv2.VideoCapture(self.worConfig.CAMERA_ID)
@@ -82,17 +95,8 @@ class WorbotsVision:
             (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
 
             if ids is not None and len(ids) > 0:
-                obj_1 = [-self.tag_size/2, self.tag_size/2, 0.0]
-                obj_2 = [self.tag_size/2, self.tag_size/2, 0.0]
-                obj_3 = [self.tag_size/2, -self.tag_size/2, 0.0]
-                obj_4 = [-self.tag_size/2, -self.tag_size/2, 0.0]
-                obj_all = obj_1 + obj_2 + obj_3 + obj_4
-                objPoints = np.array(obj_all).reshape(4,3)
-
-                axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
-
                 for i in range(len(ids)):
-                    ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                    ret, rvec, tvec = cv2.solvePnP(self.objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
                     # print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
                     detection = Detection(ids[i], tvec, rvec)
                     returnArray = np.append(returnArray, detection)
@@ -112,21 +116,59 @@ class WorbotsVision:
         detectorParams = cv2.aruco.DetectorParameters()
         (corners, ids, rejected) = cv2.aruco.detectMarkers(image=gray, dictionary=dictionary, parameters=detectorParams)
         if ids is not None and len(ids) > 0:
-            obj_1 = [-self.tag_size/2, self.tag_size/2, 0.0]
-            obj_2 = [self.tag_size/2, self.tag_size/2, 0.0]
-            obj_3 = [self.tag_size/2, -self.tag_size/2, 0.0]
-            obj_4 = [-self.tag_size/2, -self.tag_size/2, 0.0]
-            obj_all = obj_1 + obj_2 + obj_3 + obj_4
-            objPoints = np.array(obj_all).reshape(4,3)
-            axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
             for i in range(len(ids)):
-                ret, rvec, tvec = cv2.solvePnP(objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                ret, rvec, tvec = cv2.solvePnP(self.objPoints, corners[i], self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
                 # print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
                 detection = Detection(ids[i], tvec, rvec)
                 returnArray = np.append(returnArray, detection)
                 frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
             cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
         return frame, returnArray
+ 
+    def processFrame(self):
+        ret, frame = self.cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        imgPoints = []
+        objPoints = []
+
+        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_16h5)
+        detectorParams = cv2.aruco.DetectorParameters()
+        (corners, ids, rejected) = cv2.aruco.detectMarkers(gray, dictionary, None, None, detectorParams)
+
+        if ids is not None:
+            if len(ids) > 0:
+                for id in ids:
+                    pose = self.poseCalc.getPose3dFromTagID(id)
+                    corner0 = pose + Transform3d((Translation3d(0, self.tag_size/2.0, -self.tag_size/2.0)), Rotation3d())
+                    corner1 = pose + Transform3d((Translation3d(0, -self.tag_size/2.0, -self.tag_size/2.0)), Rotation3d())
+                    corner2 = pose + Transform3d((Translation3d(0, -self.tag_size/2.0, self.tag_size/2.0)), Rotation3d())
+                    corner3 = pose + Transform3d((Translation3d(0, self.tag_size/2.0, self.tag_size/2.0)), Rotation3d())
+                    objPoints += [
+                        self.poseCalc.wpiTranslationToOpenCV(corner0.translation()),
+                        self.poseCalc.wpiTranslationToOpenCV(corner1.translation()),
+                        self.poseCalc.wpiTranslationToOpenCV(corner2.translation()),
+                        self.poseCalc.wpiTranslationToOpenCV(corner3.translation())
+                    ]
+                    imgPoints += [
+                        [corners[0][0][0][0], corners[0][0][0][1]],
+                        [corners[0][0][1][0], corners[0][0][1][1]],
+                        [corners[0][0][2][0], corners[0][0][2][1]],
+                        [corners[0][0][3][0], corners[0][0][3][1]]
+                    ]
+            if len(ids)==1:
+                _, rvec, tvec, errors = cv2.solvePnPGeneric(self.objPoints, np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                field_to_tag_pose = self.poseCalc.getPose3dFromTagID(ids[0])
+                camera_to_tag_pose = self.poseCalc.openCvtoWpi(tvec[0], rvec[0]).transformBy(Transform3d(Translation3d(), Rotation3d(0, math.pi, math.pi)))
+                camera_to_tag = Transform3d(camera_to_tag_pose.translation(), camera_to_tag_pose.rotation())
+                field_to_camera = field_to_tag_pose.transformBy(camera_to_tag.inverse())
+                field_to_camera_pose = Pose3d(field_to_camera.translation(), field_to_camera.rotation())
+                print(field_to_camera_pose)
+                self.worNetwork.sendRobotPose(field_to_camera_pose)
+            if len(ids)>1:
+                _, rvec, tvec, errors = cv2.solvePnPGeneric(np.array(objPoints), np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_SQPNP)
+                print(tvec)
+
 
     def checkCalib(self):
         mtx, dist, rvecs, tvecs = self.worConfig.getCameraIntrinsicsFromJSON()
