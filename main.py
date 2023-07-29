@@ -20,7 +20,9 @@ def main():
         frame, returnArray = vision.mainPnPSingleFrame()
         network.sendVisionMeasurement(returnArray)
         if returnArray.size != 0:
-            calc.getPosefromTag(returnArray[0].tag_id, returnArray[0].tvec, returnArray[0].rvec)
+            pose = calc.getPosefromTag(returnArray[0].tag_id, returnArray[0].tvec, returnArray[0].rvec)
+            network.sendRobotPose(pose)
+        
         cv2.imshow("out", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

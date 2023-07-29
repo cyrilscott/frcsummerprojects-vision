@@ -3,3 +3,4 @@ robotpy
 pyntcore
 robotpy-apriltag
 tensorflow
+tensorflow-graphics

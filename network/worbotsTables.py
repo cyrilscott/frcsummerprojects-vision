@@ -2,12 +2,14 @@ import time
 import ntcore
 import numpy as np
 from config import WorbotsConfig
+from wpimath.geometry import *
 from vision import Detection
 
 class WorbotsTables:
     config = WorbotsConfig()
     ntInstance = None
     dataPublisher = None
+    posePublisher = None
 
     def __init__(self):
         self.ntInstance = ntcore.NetworkTableInstance.getDefault()
@@ -19,6 +21,7 @@ class WorbotsTables:
             self.ntInstance.startClient4(f"VisionModule{self.config.MODULE_ID}")
         table = self.ntInstance.getTable(f"/module{self.config.MODULE_ID}/output")
         self.dataPublisher = table.getDoubleArrayTopic("data").publish(ntcore.PubSubOptions())
+        self.posePublisher = table.getDoubleArrayTopic("pose").publish(ntcore.PubSubOptions())
 
     def sendVisionMeasurement(self, detectionArray: np.array([], Detection)):
         outArray = []
@@ -31,6 +34,13 @@ class WorbotsTables:
                     outArray.append(num)
         self.dataPublisher.set(outArray)
     
-    
-    def sendRobotPose(self):
-        print(self.number)
+    def sendRobotPose(self, pose: Pose3d):
+        outArray = []
+        outArray.append(pose.X())
+        outArray.append(pose.Y())
+        outArray.append(pose.Z())
+        outArray.append(pose.rotation().getQuaternion().W())
+        outArray.append(pose.rotation().getQuaternion().X())
+        outArray.append(pose.rotation().getQuaternion().Y())
+        outArray.append(pose.rotation().getQuaternion().Z())
+        self.posePublisher.set(outArray)

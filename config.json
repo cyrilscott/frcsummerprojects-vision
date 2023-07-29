@@ -6,5 +6,11 @@
     "ResolutionW": 1280,
     "ResolutionH": 720,
     "CameraFPS": 60,
-    "TagSizeinMeters": 0.1524
+    "TagSizeinMeters": 0.1524,
+    "camToRobotX": 0,
+    "camToRobotY": 0,
+    "camToRobotZ": 0,
+    "camToRobotRoll": 0,
+    "camToRobotPitch": 0,
+    "camToRobotYaw": 0
 }
