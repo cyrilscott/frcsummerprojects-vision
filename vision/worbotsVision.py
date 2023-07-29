@@ -61,8 +61,6 @@ class WorbotsVision:
                     allCharucoIds.append(charucoIds)
 
         if len(allCharucoCorners) > 0:
-            # Combine allCharucoCorners and allCharucoIds into single arrays
-
             ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.aruco.calibrateCameraCharuco(
                 allCharucoCorners, allCharucoIds, board, gray.shape[::-1], None, None
             )
@@ -126,7 +124,6 @@ class WorbotsVision:
                 # print(f"Translation: {tvec[0]},{tvec[1]},{tvec[2]}, Rotation: {rvec[0]},{rvec[1]},{rvec[2]}")
                 detection = Detection(ids[i], tvec, rvec)
                 returnArray = np.append(returnArray, detection)
-                pose = PoseCalculator.getPose3dfromOpenCV(tvec, rvec)
                 frame = cv2.drawFrameAxes(frame, self.mtx, self.dist, rvec, tvec, self.axis_len)
             cv2.aruco.drawDetectedMarkers(frame, corners, ids, (0, 0, 255))
         return frame, returnArray
