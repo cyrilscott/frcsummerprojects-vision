@@ -12,6 +12,7 @@ def main():
     vision = WorbotsVision()
     calc = PoseCalculator()
     # vision.calibrateCameraImages("./images")
+    # vision.calibrateCamLive()
 
     while True:
         # frame, tvec, rvec = vision.mainPnPSingleFrame()

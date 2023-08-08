@@ -82,6 +82,38 @@ class WorbotsVision:
         else:
             print("No Charuco corners were detected for calibration.")
 
+    def calibrateCamLive(self):
+        allCharucoCorners: List[np.ndarray] = []
+        allCharucoIds: List[np.ndarray] = []
+        while True:
+            ret, img = self.cap.read()
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            # Define the board
+            dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
+            board = cv2.aruco.CharucoBoard((11, 8), 0.024, 0.019, dictionary)
+
+            # Detect corners as well as markers
+            charucoParams = cv2.aruco.CharucoParameters()
+            detectorParams = cv2.aruco.DetectorParameters()
+            detector = cv2.aruco.CharucoDetector(board, charucoParams, detectorParams)
+            (charucoCorners, charucoIds, markerCorners, markerIds) = detector.detectBoard(gray)
+            if charucoCorners is not None and charucoIds is not None:
+                cv2.aruco.drawDetectedCornersCharuco(img, charucoCorners, charucoIds, (0, 0, 255))
+                if len(charucoCorners) == len(charucoIds):
+                    if (len(charucoCorners) > 10):
+                        allCharucoCorners.append(charucoCorners)
+                        allCharucoIds.append(charucoIds)
+            cv2.imshow("out", img)
+            print(len(allCharucoCorners))
+            if len(allCharucoCorners) > 10:
+                ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.aruco.calibrateCameraCharuco(
+                    allCharucoCorners, allCharucoIds, board, gray.shape[::-1], None, None
+                )
+                self.worConfig.saveCameraIntrinsics(self.mtx, self.dist, self.rvecs, self.tvecs)
+                print(ret)
+                break
+
         
     
     def mainPnP(self):
@@ -138,6 +170,7 @@ class WorbotsVision:
 
         if ids is not None:
             if len(ids) > 0:
+                flag = 0
                 for id in ids:
                     pose = self.poseCalc.getPose3dFromTagID(id)
                     corner0 = pose + Transform3d((Translation3d(0, self.tag_size/2.0, -self.tag_size/2.0)), Rotation3d())
@@ -151,11 +184,13 @@ class WorbotsVision:
                         self.poseCalc.wpiTranslationToOpenCV(corner3.translation())
                     ]
                     imgPoints += [
-                        [corners[0][0][0][0], corners[0][0][0][1]],
-                        [corners[0][0][1][0], corners[0][0][1][1]],
-                        [corners[0][0][2][0], corners[0][0][2][1]],
-                        [corners[0][0][3][0], corners[0][0][3][1]]
+                        [corners[flag][0][0][0], corners[flag][0][0][1]],
+                        [corners[flag][0][1][0], corners[flag][0][1][1]],
+                        [corners[flag][0][2][0], corners[flag][0][2][1]],
+                        [corners[flag][0][3][0], corners[flag][0][3][1]]
                     ]
+                    flag +=1
+            flag = 0
             if len(ids)==1:
                 _, rvec, tvec, errors = cv2.solvePnPGeneric(self.objPoints, np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
                 field_to_tag_pose = self.poseCalc.getPose3dFromTagID(ids[0])
@@ -167,16 +202,13 @@ class WorbotsVision:
                 field_to_camera_1 = field_to_tag_pose.transformBy(camera_to_tag_1.inverse())
                 field_to_camera_pose_0 = Pose3d(field_to_camera_0.translation(), field_to_camera_0.rotation())
                 field_to_camera_pose_1 = Pose3d(field_to_camera_1.translation(), field_to_camera_1.rotation())
-                print(field_to_camera_pose_0)
-                print(field_to_camera_pose_1)
                 return gray, PoseDetection(field_to_camera_pose_0, errors[0][0], field_to_camera_pose_1, errors[1][0], ids[0])
             if len(ids)>1:
                 _, rvec, tvec, errors = cv2.solvePnPGeneric(np.array(objPoints), np.array(imgPoints), self.mtx, self.dist, flags=cv2.SOLVEPNP_SQPNP)
                 camera_to_field_pose = self.poseCalc.openCvtoWpi(tvec[0], rvec[0])
                 camera_to_field = Transform3d(camera_to_field_pose.translation(), camera_to_field_pose.rotation())
                 field_to_camera = camera_to_field.inverse()
-                field_to_camera_pose = Pose3d(field_to_camera.translation(), field_to_camera.rotation()).transformBy(Transform3d(Translation3d(), Rotation3d(math.pi/2.0, 0, 0)))
-                print(field_to_camera_pose)
+                field_to_camera_pose = Pose3d(field_to_camera.translation(), field_to_camera.rotation())
                 return gray, PoseDetection(field_to_camera_pose, errors[0][0], None, None, ids)
         else:
             return gray, None

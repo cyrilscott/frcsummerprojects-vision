@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 from typing import List
 import math
-import tensorflow_graphics.geometry.transformation as tfg
 from config import WorbotsConfig
 from wpimath.geometry import *
 from robotpy_apriltag import *
@@ -33,10 +32,17 @@ class PoseCalculator:
         #     np.array([rvec[2][0], -rvec[0][0], -rvec[1][0]]),
         #     math.sqrt(math.pow(rvec[0][0], 2) + math.pow(rvec[1][0], 2) + math.pow(rvec[2][0], 2))
         # ))
-        return Pose3d(tvec[0][0], tvec[1][0], tvec[2][0], Rotation3d(np.array([rvec[0][0], rvec[1][0], rvec[2][0]])))
+        # return Pose3d(tvec[0][0], tvec[1][0], tvec[2][0], Rotation3d(np.array([rvec[2][0], rvec[1][0], rvec[0][0]])))
+
+        return Pose3d(
+        Translation3d(tvec[2][0], -tvec[0][0], -tvec[1][0]),
+        Rotation3d(
+            np.array([rvec[2][0], -rvec[0][0], -rvec[1][0]]),
+            math.sqrt(math.pow(rvec[0][0], 2) + math.pow(rvec[1][0], 2) + math.pow(rvec[2][0], 2))
+        ))
 
     def wpiTranslationToOpenCV(self, translation: Translation3d) -> List[float]:
-        return [translation.X(), translation.Y(), translation.Z()]
+        return [-translation.Y(), -translation.Z(), translation.X()]
 
     def getPose3dFromTagID(self, id: int) -> Pose3d:
         try:
@@ -54,12 +60,7 @@ class PoseCalculator:
         camToRobot = self.getCameraToRobotMatrix()
         finalPose = np.matmul(np.matmul(tagToWorld, np.linalg.inv(camToTag)), camToRobot)
         return self.pose3dFromMatrix(finalPose)
-
-    def pose3dFromMatrix(self, matrix) -> Pose3d:
-        euler = tfg.euler.from_rotation_matrix(matrix[:3, :3])
-        return Pose3d(matrix[0,3], matrix[1,3], matrix[2,3], Rotation3d(np.array([[euler[0].numpy()], [euler[1].numpy()], [euler[2].numpy()]])))
         
-    
     def internal(self, id) -> np.array:
         try:
             pose = self.aprilTagLayout.getTagPose(id)
