@@ -66,9 +66,7 @@ class WorbotsConfig:
     def saveCameraIntrinsics(self, cameraMatrix, cameraDist, rvecs, tvecs):
         intrinsics = {
             "cameraMatrix": cameraMatrix.tolist(),
-            "cameraDist": cameraDist.tolist(),
-            "rvecs": [r.tolist() for r in rvecs],
-            "tvecs": [t.tolist() for t in tvecs]
+            "cameraDist": cameraDist.tolist()
         }
 
         with open(self.CALIBRATION_FILENAME, "w") as f:
@@ -81,10 +79,8 @@ class WorbotsConfig:
 
             cameraMatrix = np.array(data["cameraMatrix"])
             cameraDist = np.array(data["cameraDist"])
-            rvecs = [np.array(r) for r in data["rvecs"]]
-            tvecs = [np.array(t) for t in data["tvecs"]]
 
-            return cameraMatrix, cameraDist, rvecs, tvecs
+            return cameraMatrix, cameraDist
 
         except FileNotFoundError:
             print("Calibration file 'calibration.json' not found.")

@@ -26,14 +26,6 @@ class PoseCalculator:
         pass
 
     def openCvtoWpi(self, tvec, rvec) -> Pose3d:
-        # return Pose3d(
-        # Translation3d(tvec[2][0], -tvec[0][0], -tvec[1][0]),
-        # Rotation3d(
-        #     np.array([rvec[2][0], -rvec[0][0], -rvec[1][0]]),
-        #     math.sqrt(math.pow(rvec[0][0], 2) + math.pow(rvec[1][0], 2) + math.pow(rvec[2][0], 2))
-        # ))
-        # return Pose3d(tvec[0][0], tvec[1][0], tvec[2][0], Rotation3d(np.array([rvec[2][0], rvec[1][0], rvec[0][0]])))
-
         return Pose3d(
         Translation3d(tvec[2][0], -tvec[0][0], -tvec[1][0]),
         Rotation3d(
