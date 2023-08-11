@@ -170,7 +170,7 @@ class WorbotsVision:
 
         if ids is not None:
             if len(ids) > 0:
-                flag = 0
+                index = 0
                 for id in ids:
                     pose = self.poseCalc.getPose3dFromTagID(id)
                     corner0 = pose + Transform3d((Translation3d(0, self.tag_size/2.0, -self.tag_size/2.0)), Rotation3d())
@@ -184,13 +184,13 @@ class WorbotsVision:
                         self.poseCalc.wpiTranslationToOpenCV(corner3.translation())
                     ]
                     imgPoints += [
-                        [corners[flag][0][0][0], corners[flag][0][0][1]],
-                        [corners[flag][0][1][0], corners[flag][0][1][1]],
-                        [corners[flag][0][2][0], corners[flag][0][2][1]],
-                        [corners[flag][0][3][0], corners[flag][0][3][1]]
+                        [corners[index][0][0][0], corners[index][0][0][1]],
+                        [corners[index][0][1][0], corners[index][0][1][1]],
+                        [corners[index][0][2][0], corners[index][0][2][1]],
+                        [corners[index][0][3][0], corners[index][0][3][1]]
                     ]
-                    flag +=1
-            flag = 0
+                    index +=1
+            index = 0
             camera_to_robot_pose = self.poseCalc.openCvtoWpi(np.array([[self.worConfig.CAM_TO_ROBOT_X], [self.worConfig.CAM_TO_ROBOT_Y], [self.worConfig.CAM_TO_ROBOT_Z]]), np.array([[self.worConfig.CAM_TO_ROBOT_ROLL], [self.worConfig.CAM_TO_ROBOT_PITCH], [self.worConfig.CAM_TO_ROBOT_YAW]]))
             camera_to_robot = Transform3d(camera_to_robot_pose.translation(), camera_to_robot_pose.rotation())
             if len(ids)==1:
