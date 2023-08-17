@@ -12,24 +12,23 @@ def main():
     network = WorbotsTables()
     vision = WorbotsVision()
     calc = PoseCalculator()
-    print(f"Optimized used?: {cv2.useOptimized}")
+    print(f"Optimized used?: {cv2.useOptimized()}")
+    network.sendConfig()
     # vision.calibrateCameraImages("./images")
     # vision.calibrateCamLive()
 
     while True:
         start = time.time()
-        # frame, tvec, rvec = vision.mainPnPSingleFrame()
-        # vision.mainPnP()
 
         frame, poseDetection = vision.processFrame()
         network.sendPoseDetection(poseDetection)
         
-        cv2.imshow("out", frame)
+        # cv2.imshow("out", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
-        print(f"FPS: {1 / (time.time() - start)}")
+        fps = int(1 / (time.time() - start))
+        network.sendFps(fps)
 
 if __name__ == '__main__':
     main()
